@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Student, NewStudent, Assessment } from './types.ts';
 import { Icons, MOCK_STUDENTS, GRADELIST, SHEET_CONFIG, SECURITY_CONFIG, getCurrentAcademicYear, getNextGrade } from './constants.tsx';
@@ -24,9 +23,8 @@ const App: React.FC = () => {
   
   const initialLoadDone = useRef(false);
 
-  const currentUrl = window.location.href;
-  const isTempUrl = currentUrl.includes('.goog') || currentUrl.includes('localhost') || currentUrl.includes('webcontainer') || currentUrl.includes('preview');
-  const isConfigured = SHEET_CONFIG.SYNC_ENDPOINT.includes('/exec') && SHEET_CONFIG.SYNC_ENDPOINT.length > 30;
+  // Checks if the Sync URL is actually set up in constants.tsx
+  const isConfigured = SHEET_CONFIG.SYNC_ENDPOINT && SHEET_CONFIG.SYNC_ENDPOINT.includes('/exec');
 
   useEffect(() => {
     const authStatus = sessionStorage.getItem('is_teacher_authenticated');
@@ -52,7 +50,8 @@ const App: React.FC = () => {
   };
 
   const handleShare = () => {
-    const message = `🐾 Brown Bears Student Tracker\n\n1. Go to: ${currentUrl}\n2. Enter Access Code: ${SECURITY_CONFIG.ACCESS_CODE}\n\n${isTempUrl ? '⚠️ NOTE: This is a temporary preview link.' : '✅ This is a permanent link.'}`;
+    const targetUrl = SHEET_CONFIG.OFFICIAL_URL;
+    const message = `🐾 Brown Bears Student Tracker\n\n1. Go to: ${targetUrl}\n2. Enter Access Code: ${SECURITY_CONFIG.ACCESS_CODE}\n\n✅ This is the official hub link. Please bookmark it!`;
     
     navigator.clipboard.writeText(message).then(() => {
       setShowCopyToast(true);
@@ -192,15 +191,11 @@ const App: React.FC = () => {
             <button type="submit" className="w-full bg-green-500 text-white font-black py-4 rounded-2xl text-lg shadow-lg shadow-green-100 hover:bg-green-600 active:scale-95 transition-all">OPEN HUB</button>
           </form>
           <div className="mt-8 pt-6 border-t border-gray-50 flex flex-col items-center">
-             <p className="text-[10px] text-gray-300 font-bold uppercase tracking-widest mb-2">Environment Status</p>
+             <p className="text-[10px] text-gray-300 font-bold uppercase tracking-widest mb-2">Cloud Database Status</p>
              <div className="flex gap-4">
                 <div className="flex items-center gap-1">
                    <div className={`w-2 h-2 rounded-full ${isConfigured ? 'bg-green-400' : 'bg-red-400 animate-pulse'}`}></div>
-                   <span className="text-[9px] font-bold text-gray-400">SYNC PIPE</span>
-                </div>
-                <div className="flex items-center gap-1">
-                   <div className={`w-2 h-2 rounded-full ${isTempUrl ? 'bg-yellow-400' : 'bg-blue-400'}`}></div>
-                   <span className="text-[9px] font-bold text-gray-400">{isTempUrl ? 'PREVIEW MODE' : 'LIVE MODE'}</span>
+                   <span className="text-[9px] font-bold text-gray-400">GOOGLE SHEETS SYNC</span>
                 </div>
              </div>
           </div>
@@ -240,7 +235,7 @@ const App: React.FC = () => {
     switch(connectionStatus) {
       case 'connected': return 'Live: Syncing with Google Sheets';
       case 'checking': return 'Checking Connection...';
-      case 'error': return 'Network error or CORS issue. Check your Deployment settings.';
+      case 'error': return 'Network error or CORS issue.';
       default: return 'Not Configured';
     }
   };
@@ -249,7 +244,7 @@ const App: React.FC = () => {
     <div className="min-h-screen pb-20 text-slate-800">
       {showCopyToast && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] bg-gray-900 text-white px-6 py-3 rounded-full font-bold shadow-2xl animate-bounce flex items-center gap-2">
-          <span className="text-green-400">✔</span> Invite Link & Code Copied!
+          <span className="text-green-400">✔</span> Hub Link & Code Copied!
         </div>
       )}
 
@@ -259,26 +254,16 @@ const App: React.FC = () => {
             <div className="bg-white p-4 rounded-full w-20 h-20 mx-auto flex items-center justify-center">
               <Icons.Bear />
             </div>
-            <h2 className="text-3xl font-black">Connection Diagnostic</h2>
+            <h2 className="text-3xl font-black">Connection Required</h2>
             <div className="bg-white/10 p-6 rounded-3xl text-left space-y-4 border border-white/20">
-              <p className="text-orange-200 font-bold uppercase text-xs tracking-widest">Current App URL (Share this with teachers):</p>
-              <code className="block bg-black/40 p-3 rounded-xl text-[11px] break-all border border-white/10 text-green-300 shadow-inner">
-                {currentUrl}
-              </code>
+              <p className="text-orange-200 font-bold uppercase text-xs tracking-widest">Configuration Steps:</p>
               <ul className="space-y-2 text-sm pt-4">
                 <li className="flex gap-2"><span>1.</span> <span>Deploy your Google script as "Anyone".</span></li>
                 <li className="flex gap-2"><span>2.</span> <span>Paste the URL ending in <code>/exec</code> into <code>constants.tsx</code>.</span></li>
-                <li className="flex gap-2 font-bold"><span>3.</span> <span>Copy the link above 👆 to share the ACTUAL app once hosted.</span></li>
               </ul>
             </div>
             <button onClick={() => window.location.reload()} className="px-8 py-3 bg-white text-orange-900 font-bold rounded-2xl shadow-xl active:scale-95 transition-all">RETRY CONNECTION</button>
           </div>
-        </div>
-      )}
-
-      {isTempUrl && (
-        <div className="bg-yellow-400 text-yellow-900 px-4 py-1.5 text-center text-[10px] font-black uppercase tracking-widest">
-           ⚠️ PREVIEW MODE: THIS LINK WILL EXPIRE. HOST YOUR CODE ON GITHUB FOR A PERMANENT URL.
         </div>
       )}
 
